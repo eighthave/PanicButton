@@ -28,6 +28,13 @@ import static org.iilab.pb.common.Intents.locationPendingIntent;
 
 public class PanicAlert {
     private static final String TAG = PanicAlert.class.getName();
+    private static final long[] VIBRATE_COUNTDOWN = new long[] { 0, 150, 50, 150, 50, 150, 50, 
+																   250, 150, 50, 150, 50, 150,
+															   	   650, 150, 50, 150,	
+																   850, 150 };
+    private static final long[] VIBRATE_ACTIVATED = new long[] { 0, 850, 150, 850, 150, 850, 150, 850 };
+    private static final long[] VIBRATE_CANCELLED = new long[] { 0, 150, 50, 150, 50, 150};
+    
     private LocationManager locationManager;
     private Context context;
     private AlarmManager alarmManager1, alarmManager2;
@@ -41,7 +48,7 @@ public class PanicAlert {
 
     public void activate() {
         AppUtil.close(context);
-        vibrateOnce();
+        vibrateActivated();
 
         if (isActive()
 //                || ApplicationSettings.isRestartedSetup(context)
@@ -60,9 +67,19 @@ public class PanicAlert {
         );
     }
 
-    private void vibrateOnce() {
+    private void vibrateActivated() {
         Vibrator vibrator = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
-        vibrator.vibrate(AppConstants.ALERT_CONFIRMATION_VIBRATION_DURATION);
+        vibrator.vibrate(VIBRATE_ACTIVATED, -1);
+    }
+
+    public void vibrateCancelled() {
+        Vibrator vibrator = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
+        vibrator.vibrate(VIBRATE_CANCELLED, -1);
+    }
+
+    public void vibrateConfirmationWindow() {
+        Vibrator vibrator = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
+        vibrator.vibrate(VIBRATE_COUNTDOWN, -1);
     }
 
     private void activateAlert() {
@@ -172,11 +189,6 @@ public class PanicAlert {
 
     public boolean isActive() {
         return ApplicationSettings.isAlertActive(context);
-    }
-
-    public void vibrate() {
-        Vibrator vibrator = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
-        vibrator.vibrate(AppConstants.HAPTIC_FEEDBACK_DURATION);
     }
 
     private Location getLocation(CurrentLocationProvider currentLocationProvider) {

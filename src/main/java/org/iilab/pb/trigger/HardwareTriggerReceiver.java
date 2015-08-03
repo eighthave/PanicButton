@@ -34,7 +34,14 @@ public class HardwareTriggerReceiver extends BroadcastReceiver {
             else if(multiClickEvent.canStartVibration()){
                 Log.e("*****", "vibration started");
                 PanicAlert panicAlert = getPanicAlert(context);
-                panicAlert.vibrate();
+                panicAlert.vibrateConfirmationWindow();
+            }
+
+            else if (multiClickEvent.isCancelled()) {
+                Log.e("*****", "alerts cancelled");
+                resetEvent();
+                PanicAlert panicAlert = getPanicAlert(context);
+                panicAlert.vibrateCancelled();
             }
 
             else if (multiClickEvent.isActivated()) {
@@ -42,6 +49,7 @@ public class HardwareTriggerReceiver extends BroadcastReceiver {
                 onActivation(context);
                 resetEvent();
             }
+
         }
     }
 

@@ -12,9 +12,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class MultiClickEvent {
-    private static final int TIME_INTERVAL = 6000;
-    private static final int TIME_INTERVAL_FOR_CONFIRMATION = 3000;
-    private static final int TOTAL_CLICKS = 5;
+    private static final int TRIGGER_WINDOW_DURATION = 6000;
+    private static final int GUARD_WINDOW_DURATION = 5000;
+    private static final int CONFIRMATION_WINDOW_DURATION = 3000;
+    private static final int TOTAL_CLICKS = 4;
     private final int IS_STATE_CHANGE_USER_TRIGERRED = 2;
     private final String EVENT_LOG_TAG_POWER_SCREEN_STATE = "power_screen_state";
 
@@ -22,8 +23,9 @@ public class MultiClickEvent {
     private int clickCount = 0;
     private int IS_POWER_STATE_ASLEEP = 0;
     private boolean waitForConfirmation = false;
-    private Long vibrationStartTime;
+    private Long triggerTime;
     private boolean isActivated;
+    private boolean isCancelled;
     private Map<String, String> eventLog = new HashMap<String, String>();
     private boolean skipClick = false;
 
@@ -35,25 +37,25 @@ public class MultiClickEvent {
 
     public void registerClick(Long eventTime) {
         if(waitForConfirmation){
-            long confirmationDuration = eventTime - vibrationStartTime;
-            int vibrationDuration = AppConstants.HAPTIC_FEEDBACK_DURATION;
+            long confirmationDuration = eventTime - triggerTime;
+//            int vibrationDuration = AppConstants.HAPTIC_FEEDBACK_DURATION;
 
-            boolean isConfirmationClickedBeforeVibrationEnded = confirmationDuration <= vibrationDuration;
-            boolean isConfirmationClickedWithinTimeLimit = (vibrationDuration + TIME_INTERVAL_FOR_CONFIRMATION) >= confirmationDuration;
+            boolean isConfirmationClickedWithinGuardWindow = confirmationDuration <= GUARD_WINDOW_DURATION;
+            boolean isConfirmationClickedWithinConfirmationWindow = (GUARD_WINDOW_DURATION + CONFIRMATION_WINDOW_DURATION) >= confirmationDuration;
 
-            if(isConfirmationClickedBeforeVibrationEnded){
-            	Log.e("MultiClick", "isConfirmationClickedBeforeVibrationEnded");
+            if(isConfirmationClickedWithinGuardWindow){
+            	Log.e("MultiClick", "isConfirmationClickedWithinGuardWindow");
             	skipClick = true;
                 return;
             }
-            if(!isConfirmationClickedBeforeVibrationEnded && isConfirmationClickedWithinTimeLimit){
-            	Log.e("MultiClick", "!isConfirmationClickedBeforeVibrationEnded && isConfirmationClickedWithinTimeLimit");
+            if(!isConfirmationClickedWithinGuardWindow && isConfirmationClickedWithinConfirmationWindow){
+            	Log.e("MultiClick", "!isConfirmationClickedWithinGuardWindow && isConfirmationClickedWithinConfirmationWindow");
                 isActivated = true;
                 waitForConfirmation = false;
                 return;
             }
-            if(!isConfirmationClickedWithinTimeLimit) {
-            	Log.e("MultiClick", "!isConfirmationClickedWithinTimeLimit");
+            if(!isConfirmationClickedWithinConfirmationWindow) {
+            	Log.e("MultiClick", "!isConfirmationClickedWithinConfirmationWindow");
                 resetClickCount(eventTime);
             }
             return;
@@ -71,7 +73,7 @@ public class MultiClickEvent {
             if (clickCount >= TOTAL_CLICKS) {
                 waitForConfirmation = true;
                 eventLog.put("Waiting for confirmation", new Date(eventTime).toString());
-                vibrationStartTime = eventTime;
+                triggerTime = eventTime;
                 return;
             }
         }
@@ -123,6 +125,10 @@ public class MultiClickEvent {
 
     public boolean isActivated() {
         return isActivated;
+    }
+    
+    public boolean isCancelled() {
+        return isCancelled;
     }
 
     public boolean canStartVibration() {
